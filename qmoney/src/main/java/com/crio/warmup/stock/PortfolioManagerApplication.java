@@ -23,6 +23,8 @@ import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerApplication {
 
+    static RestTemplate restTemplate = new RestTemplate();
+
 
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
 
@@ -39,8 +41,37 @@ public class PortfolioManagerApplication {
 
 
     public static List<String> mainReadQuotes(String[] args) throws IOException, URISyntaxException {
-        return Collections.emptyList();
+        ObjectMapper om = getObjectMapper();
+        File file = resolveFileFromResources(args[0]);
+        String endDate = args[1];
+        PortfolioTrade[] trade = om.readValue(file, PortfolioTrade[].class);
+
+        List<TotalReturnsDto> totalReturnsDto = new ArrayList<>();
+
+        for (PortfolioTrade t : trade) {
+            String URI = prepareUrl(t, LocalDate.parse(endDate), "2f8596fb079a6a31332d218111e473546fa385c0");
+            TiingoCandle[] tingocandles = restTemplate.getForObject(URI, TiingoCandle[].class);
+            TiingoCandle closeStock = tingocandles[tingocandles.length - 1];
+            totalReturnsDto.add(new TotalReturnsDto(t.getSymbol(), closeStock.getClose()));
+        }
+
+        totalReturnsDto.sort(Comparator.comparing(TotalReturnsDto::getClosingPrice));
+        return totalReturnsDto.stream().map(TotalReturnsDto::getSymbol).collect(Collectors.toList());
+
+
+
+//        return Collections.emptyList();
     }
+
+
+
+
+//    public static final Comparator<TotalReturnsDto> closingPriceComparator = new Comparator<TotalReturnsDto>() {
+//        @Override
+//        public int compare(TotalReturnsDto o1, TotalReturnsDto o2) {
+//            return o1.getClosingPrice().compareTo(o2.getClosingPrice());
+//        }
+//    };
 
     // TODO:
     // After refactor, make sure that the tests pass by using these two commands
@@ -54,9 +85,9 @@ public class PortfolioManagerApplication {
     // Build the Url using given parameters and use this function in your code to
     // cann the API.
     public static String prepareUrl(PortfolioTrade trade, LocalDate endDate, String token) {
-        return null ;
-
-        //Collections.emptyList();
+        String url = "https://api.tiingo.com/tiingo/daily/" + trade.getSymbol() + "/prices?startDate="
+                + trade.getPurchaseDate() + "&endDate=" + endDate + "&token=" + token;
+        return url;
     }
 
 
