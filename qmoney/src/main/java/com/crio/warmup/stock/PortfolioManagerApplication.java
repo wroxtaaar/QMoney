@@ -33,7 +33,10 @@ import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerApplication {
 
-  static RestTemplate restTemplate = new RestTemplate();
+  public static RestTemplate restTemplate = new RestTemplate();
+
+  public static PortfolioManager portfolioManager =
+      PortfolioManagerFactory.getPortfolioManager(restTemplate);
 
 
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
@@ -116,7 +119,7 @@ public class PortfolioManagerApplication {
   // ./gradlew test --tests PortfolioManagerApplicationTest.mainReadFile
   public static List<PortfolioTrade> readTradesFromJson(String filename)
       throws IOException, URISyntaxException {
-        File file = resolveFileFromResources(filename);
+    File file = resolveFileFromResources(filename);
     ObjectMapper objectMapper = getObjectMapper();
     PortfolioTrade[] trades = objectMapper.readValue(file, PortfolioTrade[].class);
 
@@ -235,21 +238,29 @@ public class PortfolioManagerApplication {
 
 
   // TODO: CRIO_TASK_MODULE_REFACTOR
-  //  Once you are done with the implementation inside PortfolioManagerImpl and
-  //  PortfolioManagerFactory, create PortfolioManager using PortfolioManagerFactory.
-  //  Refer to the code from previous modules to get the List<PortfolioTrades> and endDate, and
-  //  call the newly implemented method in PortfolioManager to calculate the annualized returns.
+  // Once you are done with the implementation inside PortfolioManagerImpl and
+  // PortfolioManagerFactory, create PortfolioManager using PortfolioManagerFactory.
+  // Refer to the code from previous modules to get the List<PortfolioTrades> and endDate, and
+  // call the newly implemented method in PortfolioManager to calculate the annualized returns.
 
   // Note:
   // Remember to confirm that you are getting same results for annualized returns as in Module 3.
 
+  private static String readFileAsString(String filename) throws URISyntaxException, IOException {
+
+    return new String(Files.readAllBytes(resolveFileFromResources(filename).toPath()), "UTF-8");
+  }
+
   public static List<AnnualizedReturn> mainCalculateReturnsAfterRefactor(String[] args)
       throws Exception {
-       String file = args[0];
-       LocalDate endDate = LocalDate.parse(args[1]);
-       String contents = readFileAsString(file);
-       ObjectMapper objectMapper = getObjectMapper();
-       return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
+    String file = args[0];
+    LocalDate endDate = LocalDate.parse(args[1]);
+    String contents = readFileAsString(file);
+    ObjectMapper objectMapper = getObjectMapper();
+
+    PortfolioTrade[] portfolioTrades = objectMapper.readValue(contents, PortfolioTrade[].class);
+
+    return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
   }
 
 

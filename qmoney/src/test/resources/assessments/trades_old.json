@@ -1,5 +1,11 @@
 [
   {
+    "symbol": "ABBV",
+    "quantity": 50,
+    "tradeType": "BUY",
+    "purchaseDate": "2016-01-29"
+  },
+  {
     "symbol": "CTS",
     "quantity": 100,
     "tradeType": "BUY",
@@ -10,11 +16,5 @@
     "quantity": 10,
     "tradeType": "BUY",
     "purchaseDate": "2016-01-11"
-  },
-  {
-    "symbol": "ABBV",
-    "quantity": 50,
-    "tradeType": "BUY",
-    "purchaseDate": "2016-01-29"
   }
 ]

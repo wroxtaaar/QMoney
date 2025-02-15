@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -29,27 +30,13 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
 
 
+  RestTemplate restTemplate;
 
   // Caution: Do not delete or modify the constructor, or else your build will break!
   // This is absolutely necessary for backward compatibility
   protected PortfolioManagerImpl(RestTemplate restTemplate) {
-    this.restTemplate = restTemplate;
+  this.restTemplate = restTemplate;
   }
-
-
-  //TODO: CRIO_TASK_MODULE_REFACTOR
-  // 1. Now we want to convert our code into a module, so we will not call it from main anymore.
-  //    Copy your code from Module#3 PortfolioManagerApplication#calculateAnnualizedReturn
-  //    into #calculateAnnualizedReturn function here and ensure it follows the method signature.
-  // 2. Logic to read Json file and convert them into Objects will not be required further as our
-  //    clients will take care of it, going forward.
-
-  // Note:
-  // Make sure to exercise the tests inside PortfolioManagerTest using command below:
-  // ./gradlew test --tests PortfolioManagerTest
-
-  //CHECKSTYLE:OFF
-
 
 
 
@@ -57,11 +44,45 @@ public class PortfolioManagerImpl implements PortfolioManager {
     return Comparator.comparing(AnnualizedReturn::getAnnualizedReturn).reversed();
   }
 
-  //CHECKSTYLE:OFF
+  // CHECKSTYLE:OFF
 
   // TODO: CRIO_TASK_MODULE_REFACTOR
-  //  Extract the logic to call Tiingo third-party APIs to a separate function.
-  //  Remember to fill out the buildUri function and use that.
+  // Extract the logic to call Tiingo third-party APIs to a separate function.
+  // Remember to fill out the buildUri function and use that.
+
+
+  public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
+      throws JsonProcessingException {
+
+    if (from.compareTo(to) >= 0) {
+      throw new RuntimeException();
+    }
+
+    String uri = buildUri(symbol, from, to);
+    TiingoCandle[] candlesArray = restTemplate.getForObject(uri, TiingoCandle[].class);
+
+    if (candlesArray == null) {
+      return new ArrayList<Candle>();
+    } else {
+      List<Candle> stocksList = Arrays.asList(candlesArray);
+      return stocksList;
+    }
+
+  }
+
+
+
+  protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
+    String token = "2f8596fb079a6a31332d218111e473546fa385c0";
+
+    String uriTemplate = "https:api.tiingo.com/tiingo/daily/$SYMBOL/prices?"
+        + "startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
+
+    String url = uriTemplate.replace("$APIKEY", token).replace("$SYMBOL", symbol)
+        .replace("$STARTDATE", startDate.toString()).replace("$ENDDATE", endDate.toString());
+    return url;
+  }
+
 
 
   @Override
@@ -113,47 +134,12 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
       annualizedReturn = new AnnualizedReturn(symbol, annualizedReturns, totalReturn);
 
-      // Collections.sort(stocksStartToEndFull, (candle1, candle2) -> {
-      // return candle1.getDate().compareTo(candle2.getDate());
-      // });
-
-
     } catch (JsonProcessingException e) {
       annualizedReturn = new AnnualizedReturn(symbol, Double.NaN, Double.NaN);
     }
 
     return annualizedReturn;
+
   }
 
-
-
-  public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
-      throws JsonProcessingException {
-
-        if (from.compareTo(to) >= 0) {
-          throw new RuntimeException();
-        }
-    
-        String uri = buildUri(symbol, from, to);
-        TiingoCandle[] candlesArray = restTemplate.getForObject(uri, TiingoCandle[].class);
-    
-        if (candlesArray == null) {
-          return new ArrayList<Candle>();
-        } else {
-          List<Candle> stocksList = Arrays.asList(candlesArray);
-          return stocksList;
-        }
-    //  return null;
-  }
-
-  protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
-    String token = "2f8596fb079a6a31332d218111e473546fa385c0";
-
-    String uriTemplate = "https:api.tiingo.com/tiingo/daily/$SYMBOL/prices?"
-        + "startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
-
-    String url = uriTemplate.replace("$APIKEY", token).replace("$SYMBOL", symbol)
-        .replace("$STARTDATE", startDate.toString()).replace("$ENDDATE", endDate.toString());
-    return url;
-  }
 }
